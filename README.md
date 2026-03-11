@@ -166,7 +166,7 @@ Una vez instalado, utiliza estos comandos para gestionar tu flujo de trabajo pro
 
 * **Real-Time Monitoring:** View logs and AI responses without leaving the terminal.
   ```bash
-  clasp log --watch
+  clasp logs --watch
   ```
 
 

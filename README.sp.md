@@ -8,7 +8,7 @@
 
 # 🚀 Orquestador Inteligente de Reclamos: Google Workspace + Vertex AI
 
-## 🎯 Objetivo del Proyecto
+## 🎯 Objetivo del Proyecto|
 Este proyecto busca transformar la gestión de atención al cliente de un proceso manual y reactivo a una **operación inteligente, automatizada y escalable**. El sistema orquestra el ecosistema de Google Workspace (Gmail + Sheets) con la potencia de la IA Generativa de **Vertex AI (Gemini 2.5 Flash)** para clasificar, derivar y auditar reclamos en tiempo real.
 
 ## 💡 Solución y Optimización
@@ -164,14 +164,14 @@ Una vez instalado, utiliza estos comandos para gestionar tu flujo de trabajo pro
   clasp push
     ```
 
-* **Descargar(Nuube -> Local):** Trae cambios hechos en el editor web(si los hay)
+* **Descargar(Nube -> Local):** Trae cambios hechos en el editor web(si los hay)
   ```bash
-  clasp push
+  clasp pull
     ```
 
 * **Monitoreo en Tiempo Real:** Visualiza los logs y respuesta de la IA sin salir de la terminal
   ```bash
-  clasp log --watch
+  clasp logs --watch
     ```
 ### 3. Extenciones
 **Google Apps Script IntelliSense**: [Instalar extensión](https://marketplace.visualstudio.com/items?itemName=apenara.gas-intellisense)
