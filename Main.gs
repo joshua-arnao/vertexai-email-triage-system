@@ -1,78 +1,70 @@
-function runEmailAutomation() {
+function processIncomingEmails() {
   const threads = GmailApp.search(
     'is:unread in:inbox',
     0,
-    APP_CONFIG.LIMITS.MAX_THREADS,
+    CONFIG.LIMITS.MAX_THREADS,
   );
-  if (threads.length === 0) return;
 
-  const sheet = SpreadsheetApp.openById(
-    APP_CONFIG.SPREADSHEET_ID,
-  ).getSheetByName(APP_CONFIG.SHEET_NAME);
+  if (threads.length === 0) {
+    console.log('✅ Inbox up to date.');
+    return;
+  }
 
-  threads.forEach((thread) => {
-    const message = thread.getMessages().pop();
-    const subject = message.getSubject() || 'ALERTA SIN ASUNTO';
-    const body = message.getPlainBody() || 'Sin contenido';
-    const sender = message.getFrom();
+  console.log(`🔄 Processing ${threads.length} emails...`);
+  const sheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID).getSheetByName(
+    'Reclamos',
+  );
 
-    const aiResult = getAiClassification(`Asunto: ${subject}\nCuerpo: ${body}`);
+  for (let i = 0; i < threads.length; i++) {
+    let thread = threads[i];
+    let message = thread.getMessages().pop();
 
-    if (
-      aiResult.classification !== 'OTROS' &&
-      aiResult.classification !== 'ERROR'
-    ) {
-      const now = new Date();
-      const ticketId =
-        'TKT-' +
-        Utilities.formatDate(
-          now,
-          Session.getScriptTimeZone(),
-          'yyyyMMdd-HHmmss',
-        );
+    let rawSubject = message.getSubject();
+    let subject =
+      rawSubject && rawSubject.trim() !== ''
+        ? rawSubject
+        : 'ALERT WITHOUT SUBJECT';
+    let body = message.getPlainBody() || 'No content';
+    let sender = message.getFrom();
 
-      processTicketNotification(message, aiResult.classification, ticketId);
+    let analysisText = anonymizeText(`Subject: ${subject}\nBody: ${body}`);
+
+    let aiResult = queryVertexAI(analysisText);
+    let classification = aiResult.classification;
+
+    console.log(
+      `📧 ${sender} | Result: ${classification} | Tokens: ${aiResult.tokens}`,
+    );
+
+    if (classification === 'OTROS' || classification === 'ERROR') {
+      console.log('   -> Ignorado.');
+      thread.markRead();
+      continue;
+    }
+
+    let currentDate = new Date();
+    let ticketId =
+      'TKT-' +
+      Utilities.formatDate(
+        currentDate,
+        Session.getScriptTimeZone(),
+        'yyyyMMdd-HHmmss',
+      );
+
+    let success = sendNotification(message, classification, ticketId);
+
+    if (success) {
       sheet.appendRow([
         ticketId,
-        now,
+        currentDate,
         sender,
-        aiResult.classification,
+        classification,
         'PENDIENTE',
         aiResult.tokens,
       ]);
+      console.log('✅ Processed successfully.');
     }
 
-    thread.markRead().moveToArchive();
-  });
-}
-
-function runSlaMonitor() {
-  const sheet = SpreadsheetApp.openById(
-    APP_CONFIG.SPREADSHEET_ID,
-  ).getSheetByName(APP_CONFIG.SHEET_NAME);
-  const data = sheet.getDataRange().getValues();
-  const now = new Date();
-
-  data.forEach((row, index) => {
-    if (index === 0) return;
-
-    const [ticketId, date, , classification, status] = row;
-    const hoursElapsed = (now - new Date(date)) / (1000 * 60 * 60);
-
-    if (
-      status === 'PENDIENTE' &&
-      hoursElapsed >= APP_CONFIG.LIMITS.EXPIRATION_HOURS
-    ) {
-      const destination =
-        classification === 'LOGISTICA'
-          ? APP_CONFIG.EMAILS.LOGISTICA
-          : APP_CONFIG.EMAILS.CALIDAD;
-      GmailApp.sendEmail(
-        destination,
-        `URGENTE: Ticket ${ticketId} Vencido`,
-        'Revisar ticket vencido.',
-      );
-      sheet.getRange(index + 1, 5).setValue('INSISTENCIA_ENVIADA');
-    }
-  });
+    thread.markRead();
+  }
 }

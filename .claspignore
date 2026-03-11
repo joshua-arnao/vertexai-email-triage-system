@@ -1,0 +1,17 @@
+# No subir documentación a Apps Script
+README.md
+docs/**
+
+# No subir configuraciones de Git o Clasp
+.gitignore
+.claspignore
+.clasp.json
+.clasprc.json
+
+# No subir dependencias locales
+node_modules/**
+package.json
+package-lock.json
+
+# Ignorar archivos de sistema
+.DS_Store

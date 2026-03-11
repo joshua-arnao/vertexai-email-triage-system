@@ -1,17 +1,20 @@
-const APP_CONFIG = Object.freeze({
-  PROJECT_ID: 'pe-pocs-ia-gen',
+const props = PropertiesService.getScriptProperties();
+
+const CONFIG = {
+  PROJECT_ID: props.getProperty('PROJECT_ID'),
   LOCATION: 'us-central1',
   MODEL_ID: 'gemini-2.5-flash',
-  SPREADSHEET_ID: '<SPREADSHEET_ID>',
-  SHEET_NAME: 'Reclamos',
+  SPREADSHEET_ID: props.getProperty('SPREADSHEET_ID'),
+
   EMAILS: {
-    LOGISTICA: 'persona1@correo.com',
-    CALIDAD: 'persona2@correo.com',
-    SUPERVISOR: 'persona3@correo.com',
+    LOGISTICS: props.getProperty('EMAIL_LOGISTICA'),
+    QUALITY: props.getProperty('EMAIL_CALIDAD'),
+    SUPERVISOR: props.getProperty('EMAIL_SUPERVISOR'),
   },
+
   LIMITS: {
     MAX_THREADS: 5,
     MAX_PROMPT_CHARS: 1500,
     EXPIRATION_HOURS: 24,
   },
-});
+};

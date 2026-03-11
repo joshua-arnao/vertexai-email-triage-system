@@ -1,13 +1,26 @@
-function getAiClassification(text) {
-  if (!text) return { classification: 'ERROR', tokens: 0 };
+function queryVertexAI(text) {
+  if (!text) text = 'Empty text';
 
-  const url = `https://${APP_CONFIG.LOCATION}-aiplatform.googleapis.com/v1/projects/${APP_CONFIG.PROJECT_ID}/locations/${APP_CONFIG.LOCATION}/publishers/google/models/${APP_CONFIG.MODEL_ID}:generateContent`;
+  const url = `https://${CONFIG.LOCATION}-aiplatform.googleapis.com/v1/projects/${CONFIG.PROJECT_ID}/locations/${CONFIG.LOCATION}/publishers/google/models/${CONFIG.MODEL_ID}:generateContent`;
 
-  const prompt = `Eres un clasificador de reclamos. Analiza: "${text.substring(0, APP_CONFIG.LIMITS.MAX_PROMPT_CHARS)}". Responde SOLO: LOGISTICA, CALIDAD o OTROS.`;
+  const prompt = `
+    Eres un clasificador de reclamos.
+    Analiza: "${text.substring(0, 1500)}"
+    Responde SOLO con una de estas palabras:
+    - LOGISTICA (demoras, no llega, chofer)
+    - CALIDAD (roto, vencido, mal estado)
+    - OTROS (spam, saludos, no es reclamo)
+  `;
 
   const payload = {
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0, maxOutputTokens: 10 },
+    safetySettings: [
+      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+    ],
+    generationConfig: { temperature: 0, maxOutputTokens: 8192 },
   };
 
   const options = {
@@ -18,25 +31,35 @@ function getAiClassification(text) {
     muteHttpExceptions: true,
   };
 
+  let actualTokens = 0;
+
   try {
     const response = UrlFetchApp.fetch(url, options);
     const json = JSON.parse(response.getContentText());
-    const tokens = json.usageMetadata ? json.usageMetadata.totalTokenCount : 0;
 
-    if (!json.candidates || json.candidates.length === 0)
-      return { classification: 'ERROR', tokens };
+    if (json.usageMetadata) actualTokens = json.usageMetadata.totalTokenCount;
 
-    const rawResponse = json.candidates[0].content.parts[0].text
-      .trim()
-      .toUpperCase();
+    if (!json.candidates || json.candidates.length === 0) {
+      console.log('⚠️ Vertex Error: ' + JSON.stringify(json));
+      return { classification: 'ERROR', tokens: actualTokens };
+    }
 
-    if (rawResponse.includes('LOGISTICA'))
-      return { classification: 'LOGISTICA', tokens };
-    if (rawResponse.includes('CALIDAD'))
-      return { classification: 'CALIDAD', tokens };
+    const candidate = json.candidates[0];
+    let responseText = '';
+    if (candidate.content && candidate.content.parts) {
+      responseText = candidate.content.parts[0].text;
+    }
 
-    return { classification: 'OTROS', tokens };
+    let result = responseText.trim().toUpperCase();
+
+    if (result.includes('LOGISTICA'))
+      return { classification: 'LOGISTICA', tokens: actualTokens };
+    if (result.includes('CALIDAD'))
+      return { classification: 'CALIDAD', tokens: actualTokens };
+
+    return { classification: 'OTROS', tokens: actualTokens };
   } catch (e) {
-    return { classification: 'ERROR', tokens: 0 };
+    console.log('🔥 Exception: ' + e);
+    return { classification: 'ERROR', tokens: actualTokens };
   }
 }

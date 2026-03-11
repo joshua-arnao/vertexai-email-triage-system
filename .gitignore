@@ -1,0 +1,13 @@
+# Configuración de Clasp
+.clasp.json
+
+# Credenciales de inicio de sesión de Clasp
+.clasprc.json
+
+# Dependencias de Node
+node_modules/
+package-lock.json
+
+# Archivos de sistema y logs
+*.log
+.DS_Store

@@ -1,0 +1,39 @@
+flowchart TD
+    subgraph Local_Dev [💻 Entorno Local]
+        VS[VS Code] <--> CLASP[CLASP CLI]
+    end
+
+    subgraph Input [📩 Entrada]
+        Customer((Cliente)) -- Correo --> Gmail[Gmail Inbox]
+    end
+    
+    subgraph GAS_Engine [⚙️ Orquestador Apps Script]
+        Main[Main.gs]
+        Config[Config.gs]
+        Utils[Utils.gs - PII Masking]
+        Vertex[VertexService.gs]
+        Notify[NotificationService.gs]
+        Monitor[Monitor.gs]
+    end
+
+    subgraph GCP_Services [☁️ Google Cloud & Data]
+        AI[Vertex AI - Gemini 1.5 Flash]
+        Sheet[(Google Sheets - Logs)]
+    end
+
+    CLASP -- "clasp push" --> GAS_Engine
+    Gmail -- "Triggers" --> Main
+    Main --> Config
+    Main --> Utils
+    Utils -- "Texto Protegido" --> Vertex
+    Vertex <--> AI
+    Main --> Notify
+    Notify -- "Forward / Reply" --> Gmail
+    Main -- "Registro" --> Sheet
+    Monitor -- "Auditoría SLA" --> Sheet
+    Monitor -- "Escalación" --> Gmail
+
+    style Local_Dev fill:#fff2cc,stroke:#d6b656
+    style GAS_Engine fill:#dae8fc,stroke:#6c8ebf
+    style GCP_Services fill:#d5e8d4,stroke:#82b366
+    style AI fill:#f8cecc,stroke:#b85450
