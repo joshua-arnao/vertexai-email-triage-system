@@ -1,7 +1,7 @@
 <p align="center">
     <b>Select Language:</b><br>
-    <a href="README_EN.md">🇺🇸 English</a> |
-    <a href="README_SP.md">🇪🇸 Español</a>
+    <a href="README.md">🇺🇸 English</a> |
+    <a href="README.sp.md">🇪🇸 Español</a>
 </p>
 
 ---
